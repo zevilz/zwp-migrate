@@ -27,12 +27,14 @@ SSH keys with passphrase not supported. But you can temporary disable asking pas
 
 ```bash
 eval "$(ssh-agent)"
-ssh-add ~/.ssh/id_rsa```
+ssh-add ~/.ssh/id_rsa
+```
 
 After migration you can remove identity for enable passphrase:
 
 ```bash
-ssh-add -d ~/.ssh/id_rsa```
+ssh-add -d ~/.ssh/id_rsa
+```
 
 ## Parameters
 
