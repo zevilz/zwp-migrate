@@ -80,7 +80,7 @@ bash zwp_migrate.sh
 Also you can use it without downloading:
 
 ```bash
-bash <(curl -L https://raw.githubusercontent.com/zevilz/zwp-migrate/master/zwp_migrate.sh)
+bash <(curl -sL https://raw.githubusercontent.com/zevilz/zwp-migrate/master/zwp_migrate.sh)
 ```
 
 ### Non-interactive mode
