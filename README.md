@@ -50,9 +50,9 @@ Non-interactive mode only parameters:
 - `--source-user=<username>` - system user on source host (source site owner; usage: `--source-user=username`);
 - `--source-user-pass='<password>'` - system user password on source host (password of source site owner; don't set it if you run script as this user; usage: `--source-user-pass='qwerty123'`);
 - `--source-path=<path>` - full path to source site root (usage: `--source-path=/home/username/site.com/public_html`);
-- `--target-host=<ip|hostname>:<ssh_port>` - target host IP/hostname with ssh port (if it not 22) separated by colon (don't set it if you run script on this host; usage: `--source-host=111.222.333.444 | --source-host=111.222.333.444:1234 | --source-host=hostname.com | --source-host=hostname.com:1234`);
-- `--target-user=<username>` - system user on target host (target site owner; usage: `--source-user=username`);
-- `--target-user-pass='<password>'` - system user password on target host (password of target site owner; don't set it if you run script as this user; usage: `--source-user-pass='qwerty123'`);
+- `--target-host=<ip|hostname>:<ssh_port>` - target host IP/hostname with ssh port (if it not 22) separated by colon (don't set it if you run script on this host; usage: `--target-host=111.222.333.444 | --target-host=111.222.333.444:1234 | --target-host=hostname.com | --target-host=hostname.com:1234`);
+- `--target-user=<username>` - system user on target host (target site owner; usage: `--target-user=username`);
+- `--target-user-pass='<password>'` - system user password on target host (password of target site owner; don't set it if you run script as this user; usage: `--target-user-pass='qwerty123'`);
 - `--target-path=<path>` - full path to target site root (usage: `--target-path=/home/username/site.com/public_html`);
 - `--target-site-url=<url>` - full url of target site with protocol (usage: `--target-site-url=https://site.com`);
 - `--target-db-name=<database>` - target site database name (usage: `--target-db-name=db`);
