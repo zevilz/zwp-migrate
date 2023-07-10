@@ -1,6 +1,6 @@
 # WordPress migration tool [![Version](https://img.shields.io/badge/version-v1.0.0-brightgreen.svg)](https://github.com/zevilz/zwp-migrate/releases/tag/1.0.0)
 
-Simple tool for migrate WordPress sites between servers with SSH including local migrations.
+Simple tool for migrate WordPress sites between servers and shared hostings with SSH access via rsync and WP-CLI (including local migrations).
 
 ## Features
 
