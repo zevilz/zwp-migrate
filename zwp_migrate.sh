@@ -1779,7 +1779,7 @@ fi
 
 echo -n "Replacing URLs in DB..."
 
-if [ "$ERRORS_MIGRATE" -eq 0 ]; then
+if [ "$ERRORS_MIGRATE" -eq 0 ] && [[ "$SOURCE_SITE_URL" != "$TARGET_SITE_URL" ]]; then
 	if [ -z "$TARGET_HOST" ]; then
 		if [[ $(whoami) == 'root' ]]; then
 			REPLACING_RESULT=$(su -l "${TARGET_USER}" -s /bin/bash -c "\"$WPCLI\" search-replace \"$SOURCE_SITE_URL\" \"$TARGET_SITE_URL\" --all-tables --report-changed-only --path=\"${TARGET_PATH}\" 2>/dev/null")
@@ -1821,7 +1821,7 @@ fi
 
 echo -n "Replacing paths in DB..."
 
-if [ "$ERRORS_MIGRATE" -eq 0 ]; then
+if [ "$ERRORS_MIGRATE" -eq 0 ] && [[ "$SOURCE_PATH" != "$TARGET_PATH" ]]; then
 	if [ -z "$TARGET_HOST" ]; then
 		if [[ $(whoami) == 'root' ]]; then
 			REPLACING_RESULT=$(su -l "${TARGET_USER}" -s /bin/bash -c "\"$WPCLI\" search-replace \"$SOURCE_PATH\" \"$TARGET_PATH\" --all-tables --report-changed-only --path=\"${TARGET_PATH}\" 2>/dev/null")
