@@ -1312,6 +1312,8 @@ if [ "$FAIL_BOTH_REMOTE" -eq 0 ] && [ "$FAIL_USER" -eq 0 ] && [ "$FAIL_REMOTE" -
 		SOURCE_SITE_URL=$($SETSID ssh "${SOURCE_USER}"@"${SOURCE_HOST}" -p "${SOURCE_PORT}" "mysql -u \"$SOURCE_DB_USER\" -p\"${SOURCE_DB_PASS}\" -BN -e \"select option_value from ${SOURCE_DB_NAME}.${SOURCE_DB_PREFIX}options where option_name='siteurl' ;\" 2>&1")
 	fi
 
+	SOURCE_SITE_URL=$(echo "$SOURCE_SITE_URL" | grep -v 'Using a password')
+
 	if [ "$?" -eq 255 ] && [ -n "$SOURCE_HOST" ]; then
 		$SETCOLOR_FAILURE
 		echo "[FAIL]"
@@ -1430,6 +1432,8 @@ if [ "$FAIL_BOTH_REMOTE" -eq 0 ] && [ "$FAIL_USER" -eq 0 ] && [ "$FAIL_REMOTE" -
 	else
 		CHECK_TARGET_DB=$($SETSID ssh "${TARGET_USER}"@"${TARGET_HOST}" -p "${TARGET_PORT}" "mysql -u \"$TARGET_DB_USER\" -p\"${TARGET_DB_PASS}\" -e \"USE \"${TARGET_DB_NAME}\";\" 2>&1" 2>&1)
 	fi
+
+	CHECK_TARGET_DB=$(echo "$CHECK_TARGET_DB" | grep -v 'Using a password')
 
 	if [ "$?" -eq 255 ]; then
 		$SETCOLOR_FAILURE
@@ -1672,10 +1676,10 @@ echo -n "Importing DB..."
 if [ "$ERRORS_MIGRATE" -eq 0 ]; then
 	if [ -z "$TARGET_HOST" ]; then
 		gunzip -c "${TARGET_PATH}"/"${SOURCE_DB_NAME}".sql.gz | mysql -u "${TARGET_DB_USER}" "${CMD_TARGET_DB_PASS}" "${TARGET_DB_NAME}" 2>"$TARGET_SCRIPT_ERRORS_TMP"
-		RESULT_ERRORS=$(cat "$TARGET_SCRIPT_ERRORS_TMP" 2>&1)
+		RESULT_ERRORS=$(cat "$TARGET_SCRIPT_ERRORS_TMP" | grep -v 'Using a password' 2>&1)
 	else
 		$SETSID ssh "${TARGET_USER}"@"${TARGET_HOST}" -p "${TARGET_PORT}" "gunzip -c \"${TARGET_PATH}\"/\"${SOURCE_DB_NAME}\".sql.gz | mysql -u \"${TARGET_DB_USER}\" \"${CMD_TARGET_DB_PASS}\" \"${TARGET_DB_NAME}\" 2>\"$TARGET_SCRIPT_ERRORS_TMP\""
-		RESULT_ERRORS=$($SETSID ssh "${TARGET_USER}"@"${TARGET_HOST}" -p "${TARGET_PORT}" "cat \"$TARGET_SCRIPT_ERRORS_TMP\" 2>&1")
+		RESULT_ERRORS=$($SETSID ssh "${TARGET_USER}"@"${TARGET_HOST}" -p "${TARGET_PORT}" "cat \"$TARGET_SCRIPT_ERRORS_TMP\" | grep -v 'Using a password' 2>&1")
 	fi
 
 	if [ -z "$RESULT_ERRORS" ]; then
