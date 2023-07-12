@@ -168,5 +168,5 @@ NOTE: add a space in front of the command to avoid getting the password in the c
 
 ## Changelog
 
-2023.07.12 - 1.0.1 - [Bugfixes](https://github.com/zevilz/zwp-migrate/releases/tag/1.0.1)
-2023.07.07 - 1.0.0 - Released
+- 2023.07.12 - 1.0.1 - [Bugfixes](https://github.com/zevilz/zwp-migrate/releases/tag/1.0.1)
+- 2023.07.07 - 1.0.0 - Released
