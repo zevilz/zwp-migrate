@@ -1619,11 +1619,11 @@ echo -n "Creating DB dump..."
 
 if [ "$ERRORS_MIGRATE" -eq 0 ]; then
 	if [ -z "$SOURCE_HOST" ]; then
-		mysqldump --insert-ignore --skip-lock-tables --single-transaction=TRUE --add-drop-table -u "$SOURCE_DB_USER" "$CMD_SOURCE_DB_PASS" "$SOURCE_DB_NAME" 2>"$SOURCE_SCRIPT_ERRORS_TMP" | gzip -c > "${SOURCE_PATH}"/"${SOURCE_DB_NAME}".sql.gz
-		RESULT_ERRORS=$(cat "$SOURCE_SCRIPT_ERRORS_TMP" 2>&1)
+		mysqldump --insert-ignore --skip-lock-tables --single-transaction=TRUE --add-drop-table --no-tablespaces -u "$SOURCE_DB_USER" "$CMD_SOURCE_DB_PASS" "$SOURCE_DB_NAME" 2>"$SOURCE_SCRIPT_ERRORS_TMP" | gzip -c > "${SOURCE_PATH}"/"${SOURCE_DB_NAME}".sql.gz
+		RESULT_ERRORS=$(cat "$SOURCE_SCRIPT_ERRORS_TMP" | grep -v 'Using a password' 2>&1)
 	else
-		$SETSID ssh "${SOURCE_USER}"@"${SOURCE_HOST}" -p "${SOURCE_PORT}" "mysqldump --insert-ignore --skip-lock-tables --single-transaction=TRUE --add-drop-table -u \"$SOURCE_DB_USER\" \"$CMD_SOURCE_DB_PASS\" \"$SOURCE_DB_NAME\" 2>\"$SOURCE_SCRIPT_ERRORS_TMP\" | gzip -c > \"${SOURCE_PATH}\"/\"${SOURCE_DB_NAME}\".sql.gz"
-		RESULT_ERRORS=$($SETSID ssh "${SOURCE_USER}"@"${SOURCE_HOST}" -p "${SOURCE_PORT}" "cat \"$SOURCE_SCRIPT_ERRORS_TMP\" 2>&1")
+		$SETSID ssh "${SOURCE_USER}"@"${SOURCE_HOST}" -p "${SOURCE_PORT}" "mysqldump --insert-ignore --skip-lock-tables --single-transaction=TRUE --add-drop-table --no-tablespaces -u \"$SOURCE_DB_USER\" \"$CMD_SOURCE_DB_PASS\" \"$SOURCE_DB_NAME\" 2>\"$SOURCE_SCRIPT_ERRORS_TMP\" | gzip -c > \"${SOURCE_PATH}\"/\"${SOURCE_DB_NAME}\".sql.gz"
+		RESULT_ERRORS=$($SETSID ssh "${SOURCE_USER}"@"${SOURCE_HOST}" -p "${SOURCE_PORT}" "cat \"$SOURCE_SCRIPT_ERRORS_TMP\" | grep -v 'Using a password' 2>&1")
 	fi
 
 	if [ -z "$RESULT_ERRORS" ]; then
