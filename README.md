@@ -1,4 +1,4 @@
-# WordPress migration tool [![Version](https://img.shields.io/badge/version-v1.0.1-brightgreen.svg)](https://github.com/zevilz/zwp-migrate/releases/tag/1.0.1)
+# WordPress migration tool [![Version](https://img.shields.io/badge/version-v1.1.0-brightgreen.svg)](https://github.com/zevilz/zwp-migrate/releases/tag/1.1.0)
 
 Simple tool for migrate WordPress sites between servers and shared hostings with SSH access via rsync and WP-CLI (including local migrations).
 
@@ -57,7 +57,8 @@ Non-interactive mode only parameters:
 - `--target-site-url=<url>` - full url of target site with protocol (usage: `--target-site-url=https://site.com`);
 - `--target-db-name=<database>` - target site database name (usage: `--target-db-name=db`);
 - `--target-db-user=<username>` - target site database user with full access rights to target site database (usage: `--target-db-user=db_user`);
-- `--target-db-pass=<password>` - target site database user password (usage: `--target-db-pass='qwerty123'`).
+- `--target-db-pass=<password>` - target site database user password (usage: `--target-db-pass='qwerty123'`);
+- `--files-exclude=<patterns>` - file patterns to exclude from files sync separated by spaces (pattern `wp-content/cache` already included to this list; usage: `--files-exclude="wp-config.php wp-content/tmp/*"`).
 
 ## Usage
 
@@ -147,11 +148,28 @@ bash zwp_migrate.sh --non-interactive \
 	--target-db-pass='querty1234'
 ```
 
+Migrate from local to remote server excluding `wp-config.php` (useful for resync after site migration):
+
+```bash
+bash zwp_migrate.sh --non-interactive \
+	--source-user=user \
+	--source-path=/home/user/public_html/site.com \
+	--target-host=111.222.111.222 \
+	--target-user=anotheruser \
+	--target-user-pass='querty1234' \
+	--target-path=/home/anotheruser/public_html/another-site.com \
+	--target-site-url=https://another-site.com \
+	--target-db-name=db \
+	--target-db-user=dbuser \
+	--target-db-pass='querty1234' \
+	--files-exclude="wp-config.php"
+```
+
 NOTE: add a space in front of the command to avoid getting the password in the command history or disable history (`unset HISTFILE`).
 
 ## TODO
 
-- [ ] support for sync exclude list;
+- [x] ~~support for sync exclude list;~~
 - [ ] support for set WP-CLI custom path;
 - [ ] support for using WP-CLI on source host;
 - [ ] support for backup/restore on non localhost db servers;
@@ -168,5 +186,6 @@ NOTE: add a space in front of the command to avoid getting the password in the c
 
 ## Changelog
 
+- 2023.07.13 - 1.1.0 - Added support for sync exclude list by new `--files-exclude=<patterns>` parameter
 - 2023.07.12 - 1.0.1 - [Bugfixes](https://github.com/zevilz/zwp-migrate/releases/tag/1.0.1)
 - 2023.07.07 - 1.0.0 - Released
