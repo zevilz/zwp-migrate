@@ -3,7 +3,7 @@
 # URL: https://github.com/zevilz/zwp-migrate
 # Author: Alexandr "zEvilz" Emshanov
 # License: MIT
-# Version: 1.0.0
+# Version: 1.1.0
 
 # shellcheck disable=SC2046
 # shellcheck disable=SC2089
@@ -84,6 +84,8 @@ cleanup()
 		echo -n "  removing the script temporary files..."
 	fi
 
+	# source tmp errors file
+
 	if [ -z "$SOURCE_HOST" ]; then
 		rm -f "$SOURCE_SCRIPT_ERRORS_TMP" > /dev/null 2>/dev/null
 	elif [ "$FAIL_REMOTE" -eq 0 ]; then
@@ -93,6 +95,8 @@ cleanup()
 	fi
 
 	SOURCE_RESULT="$?"
+
+	# target tmp errors file
 
 	if [ -z "$TARGET_HOST" ]; then
 		rm -f "$TARGET_SCRIPT_ERRORS_TMP" > /dev/null 2>/dev/null
@@ -104,8 +108,16 @@ cleanup()
 
 	TARGET_RESULT="$?"
 
+	# rsync exclude list file
+
+	rm -f "$RSYNC_EXCLUDE_LIST_FILE" > /dev/null 2>/dev/null
+
+	RSYNC_EXCLUDE_RESULT="$?"
+
+	# result
+
 	if [ -z "$1" ]; then
-		if [ "$SOURCE_RESULT" -eq 0 ] && [ "$TARGET_RESULT" -eq 0 ]; then
+		if [ "$SOURCE_RESULT" -eq 0 ] && [ "$TARGET_RESULT" -eq 0 ] && [ "$RSYNC_EXCLUDE_RESULT" -eq 0 ]; then
 			$SETCOLOR_SUCCESS
 			echo "[OK]"
 			$SETCOLOR_NORMAL
@@ -115,6 +127,8 @@ cleanup()
 			$SETCOLOR_NORMAL
 		fi
 	fi
+
+	# ssh session file
 
 	if [[ -n "$SOURCE_HOST" && "$SOURCE_AUTH_TYPE" == "pass" ]] || [[ -n "$TARGET_HOST" && "$TARGET_AUTH_TYPE" == "pass" ]]; then
 		if [ -z "$1" ]; then
@@ -252,6 +266,8 @@ RSYNC_SOURCE_HOST=
 RSYNC_TARGET_HOST=
 RSYNC_PORT=
 RSYNC_CHOWN=
+RSYNC_EXCLUDE_LIST='wp-content/cache'
+RSYNC_EXCLUDE_LIST_FILE="${TMPDIR-/tmp}/zwp_migrate.tmp.rsync_exclude.${SCRIPT_INSTANCE_KEY}"
 CMD_SOURCE_DB_PASS=
 CMD_TARGET_DB_PASS=
 #SYNC=0
@@ -314,6 +330,9 @@ while true ; do
 
 	elif [ "${1#--target-db-pass=}" != "$1" ] ; then
 		TARGET_DB_PASS="${1#--target-db-pass=}"
+
+	elif [ "${1#--files-exclude=}" != "$1" ] ; then
+		RSYNC_EXCLUDE_LIST="${RSYNC_EXCLUDE_LIST} ${1#--files-exclude=}"
 
 	elif [ -z "$1" ] ; then
 		break
@@ -1019,6 +1038,16 @@ if [[ -n "$SOURCE_HOST" && "$SOURCE_AUTH_TYPE" == "pass" ]] || [[ -n "$TARGET_HO
 	fi
 fi
 
+# Prepare exclude list file for rsync
+
+RSYNC_EXCLUDE_ARRAY=($RSYNC_EXCLUDE_LIST)
+
+printf "%s\n" "${RSYNC_EXCLUDE_ARRAY[@]}" > "$RSYNC_EXCLUDE_LIST_FILE"
+
+#for RSYNC_EXCLUDE_ARRAY_ITEM in "${RSYNC_EXCLUDE_ARRAY[@]}"; do
+#	echo "$RSYNC_EXCLUDE_ARRAY_ITEM" >> "$RSYNC_EXCLUDE_LIST_FILE"
+#done
+
 # Checks
 
 echo -n "Checking vars..."
@@ -1569,6 +1598,11 @@ if [ -n "$WPCLI" ]; then
 else
 	echo "not found (it will be temporary download before migration)"
 fi
+if [ -f "$RSYNC_EXCLUDE_LIST_FILE" ] && [ -n "$(cat $RSYNC_EXCLUDE_LIST_FILE)" ]; then
+	echo
+	echo "${BOLD_TEXT}File patterns to exclude:${NORMAL_TEXT}"
+	cat "$RSYNC_EXCLUDE_LIST_FILE"
+fi
 echo
 
 # Confirm
@@ -1646,13 +1680,13 @@ echo -n "Syncing..."
 
 if [ "$ERRORS_MIGRATE" -eq 0 ]; then
 	if [ -z "$SOURCE_HOST" ] && [ -z "$TARGET_HOST" ]; then
-		$SETSID rsync -azq ${RSYNC_CHOWN} --chmod=D755,F644 --exclude 'wp-content/cache' --delete "${SOURCE_PATH}"/* "${TARGET_PATH}"/ 2>/dev/null
+		$SETSID rsync -azq ${RSYNC_CHOWN} --chmod=D755,F644 --exclude-from="$RSYNC_EXCLUDE_LIST_FILE" --delete "${SOURCE_PATH}"/* "${TARGET_PATH}"/ 2>/dev/null
 		SYNC_RESULT=$?
-		$SETSID rsync -azq ${RSYNC_CHOWN} --chmod=D755,F644 "${SOURCE_PATH}"/.??* "${TARGET_PATH}"/ 2>/dev/null
+		$SETSID rsync -azq ${RSYNC_CHOWN} --chmod=D755,F644 --exclude-from="$RSYNC_EXCLUDE_LIST_FILE" "${SOURCE_PATH}"/.??* "${TARGET_PATH}"/ 2>/dev/null
 	else
-		$SETSID rsync -azq -e "ssh -p ${RSYNC_PORT}" ${RSYNC_CHOWN} --chmod=D755,F644 --exclude 'wp-content/cache' --delete "${RSYNC_SOURCE_HOST}${SOURCE_PATH}"/* "${RSYNC_TARGET_HOST}${TARGET_PATH}"/ 2>/dev/null
+		$SETSID rsync -azq -e "ssh -p ${RSYNC_PORT}" ${RSYNC_CHOWN} --chmod=D755,F644 --exclude-from="$RSYNC_EXCLUDE_LIST_FILE" --delete "${RSYNC_SOURCE_HOST}${SOURCE_PATH}"/* "${RSYNC_TARGET_HOST}${TARGET_PATH}"/ 2>/dev/null
 		SYNC_RESULT=$?
-		$SETSID rsync -azq -e "ssh -p ${RSYNC_PORT}" ${RSYNC_CHOWN} --chmod=D755,F644 "${RSYNC_SOURCE_HOST}${SOURCE_PATH}"/.??* "${RSYNC_TARGET_HOST}${TARGET_PATH}"/ 2>/dev/null
+		$SETSID rsync -azq -e "ssh -p ${RSYNC_PORT}" ${RSYNC_CHOWN} --chmod=D755,F644 --exclude-from="$RSYNC_EXCLUDE_LIST_FILE" "${RSYNC_SOURCE_HOST}${SOURCE_PATH}"/.??* "${RSYNC_TARGET_HOST}${TARGET_PATH}"/ 2>/dev/null
 	fi
 
 	if [ "$SYNC_RESULT" -eq 0 ]; then
