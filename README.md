@@ -1,4 +1,4 @@
-# WordPress migration tool [![Version](https://img.shields.io/badge/version-v1.1.0-brightgreen.svg)](https://github.com/zevilz/zwp-migrate/releases/tag/1.1.0)
+# WordPress migration tool [![Version](https://img.shields.io/badge/version-v1.2.0-brightgreen.svg)](https://github.com/zevilz/zwp-migrate/releases/tag/1.2.0)
 
 Simple tool for migrate WordPress sites between servers and shared hostings with SSH access via rsync and WP-CLI (including local migrations).
 
@@ -55,6 +55,7 @@ Non-interactive mode only parameters:
 - `--target-user-pass='<password>'` - system user password on target host (password of target site owner; don't set it if you run script as this user; usage: `--target-user-pass='qwerty123'`);
 - `--target-path=<path>` - full path to target site root (usage: `--target-path=/home/username/site.com/public_html`);
 - `--target-site-url=<url>` - full url of target site with protocol (usage: `--target-site-url=https://site.com`);
+- `--target-db-host=<ip|hostname|localhost>:<port>` - target site database host with port (if it not default 3306) separated by colon (don't set it if db server is localhost with default 3306 port; usage: `--target-db-host=localhost:123456 | --target-db-host=dbserver.com | --target-db-host=dbserver.com:3306`);
 - `--target-db-name=<database>` - target site database name (usage: `--target-db-name=db`);
 - `--target-db-user=<username>` - target site database user with full access rights to target site database (usage: `--target-db-user=db_user`);
 - `--target-db-pass=<password>` - target site database user password (usage: `--target-db-pass='qwerty123'`);
@@ -172,7 +173,7 @@ NOTE: add a space in front of the command to avoid getting the password in the c
 - [x] ~~support for sync exclude list;~~
 - [ ] support for set WP-CLI custom path;
 - [ ] support for using WP-CLI on source host;
-- [ ] support for backup/restore on non localhost db servers;
+- [x] ~~support for backup/restore on non localhost db servers;~~
 - [ ] support for change db backup/restore method (direct/WP-CLI);
 - [ ] support for both remote servers;
 - [ ] support for different remote user and remote site owner;
@@ -186,6 +187,7 @@ NOTE: add a space in front of the command to avoid getting the password in the c
 
 ## Changelog
 
+- 2023.07.31 - 1.2.0 - Added support for backup/restore on non localhost db servers
 - 2023.07.13 - 1.1.0 - Added support for sync exclude list by new `--files-exclude=<patterns>` parameter
 - 2023.07.12 - 1.0.1 - [Bugfixes](https://github.com/zevilz/zwp-migrate/releases/tag/1.0.1)
 - 2023.07.07 - 1.0.0 - Released
