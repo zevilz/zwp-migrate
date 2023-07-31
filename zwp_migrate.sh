@@ -3,7 +3,7 @@
 # URL: https://github.com/zevilz/zwp-migrate
 # Author: Alexandr "zEvilz" Emshanov
 # License: MIT
-# Version: 1.1.0
+# Version: 1.2.0
 
 # shellcheck disable=SC2046
 # shellcheck disable=SC2089
@@ -30,7 +30,7 @@
 
 checkHostFormat()
 {
-	if [[ "$1" =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}(:[0-9]+)?$ ]] || [[ $(echo "$1" | grep -P "(?=^.{4,253}$)(^(?:[a-z0-9](?:(?:[a-z0-9\-]){0,61}[a-z0-9])?\.)+[a-z0-9\-]{2,}(:[0-9]+)?$)") == "$1" ]]; then
+	if [[ "$1" =~ ^localhost(:[0-9]+)?$ ]] || [[ "$1" =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}(:[0-9]+)?$ ]] || [[ $(echo "$1" | grep -P "(?=^.{4,253}$)(^(?:[a-z0-9](?:(?:[a-z0-9\-]){0,61}[a-z0-9])?\.)+[a-z0-9\-]{2,}(:[0-9]+)?$)") == "$1" ]]; then
 		echo 1
 	else
 		echo 0
@@ -240,6 +240,8 @@ SOURCE_USER=
 SOURCE_USER_PASS=
 SOURCE_PATH=
 SOURCE_SITE_URL=
+SOURCE_DB_HOST=
+SOURCE_DB_PORT=3306
 SOURCE_DB_NAME=
 SOURCE_DB_USER=
 SOURCE_DB_PASS=
@@ -254,6 +256,8 @@ TARGET_USER=
 TARGET_USER_PASS=
 TARGET_PATH=
 TARGET_SITE_URL=
+TARGET_DB_HOST=
+TARGET_DB_PORT=3306
 TARGET_DB_NAME=
 TARGET_DB_USER=
 TARGET_DB_PASS=
@@ -321,6 +325,9 @@ while true ; do
 
 	elif [ "${1#--target-site-url=}" != "$1" ] ; then
 		TARGET_SITE_URL="${1#--target-site-url=}"
+
+	elif [ "${1#--target-db-host=}" != "$1" ] ; then
+		TARGET_DB_HOST="${1#--target-db-host=}"
 
 	elif [ "${1#--target-db-name=}" != "$1" ] ; then
 		TARGET_DB_NAME="${1#--target-db-name=}"
@@ -712,6 +719,36 @@ if [ $INTERACTIVE -eq 1 ]; then
 
 	echo
 
+	# target db host
+
+	echo "${BOLD_TEXT}# Target DB host${NORMAL_TEXT}"
+
+	while true; do
+		echo
+		echo "WordPress database host on target server (localhost with default 3306 port by default)."
+		echo "Set port after colon if you use custom port (ex.: \"123.123.123.123:2222\")"
+		echo
+		echo -n "Type DB host (empty value for localhost) > "
+
+		read -r TARGET_DB_HOST
+
+		if [ -n "$TARGET_DB_HOST" ]; then
+			if [ $(checkHostFormat "$TARGET_DB_HOST") -eq 1 ]; then
+				break
+			else
+				$SETCOLOR_FAILURE
+				echo "Wrong DB host format!"
+				$SETCOLOR_NORMAL
+			fi
+		else
+			TARGET_DB_HOST="localhost"
+			break
+		fi
+
+	done
+
+	echo
+
 	# target db name
 
 	echo "${BOLD_TEXT}# Target DB name${NORMAL_TEXT}"
@@ -929,6 +966,18 @@ else
 		ERRORS_CHECK=1
 	fi
 
+	if [ -z "$TARGET_DB_HOST" ]; then
+		TARGET_DB_HOST="localhost"
+	elif [ -n "$TARGET_DB_HOST" ] && [ $(checkHostFormat "$TARGET_DB_HOST") -eq 0 ]; then
+		if [ "$ERRORS_CHECK" -eq 0 ]; then
+			echo
+		fi
+		$SETCOLOR_FAILURE
+		echo "  Wrong target DB host format!" 1>&2
+		$SETCOLOR_NORMAL
+		ERRORS_CHECK=1
+	fi
+
 	if [ -z "$TARGET_DB_NAME" ]; then
 		if [ "$ERRORS_CHECK" -eq 0 ]; then
 			echo
@@ -1015,6 +1064,11 @@ fi
 
 if [ -z "$TARGET_HOST" ] && [[ $(whoami) == 'root' ]]; then
 	RSYNC_CHOWN="--chown=${TARGET_USER}:${TARGET_USER}"
+fi
+
+if [[ "$TARGET_DB_HOST" == *:* ]]; then
+	TARGET_DB_PORT=$(echo "$TARGET_DB_HOST" | awk -F ':' '{print $2}')
+	TARGET_DB_HOST=$(echo "$TARGET_DB_HOST" | awk -F ':' '{print $1}')
 fi
 
 # Create dir for logs if not exists
@@ -1287,12 +1341,20 @@ if [ "$FAIL_BOTH_REMOTE" -eq 0 ] && [ "$FAIL_USER" -eq 0 ] && [ "$FAIL_REMOTE" -
 		ERRORS_CHECK=1
 		FAIL_SOURCE_DB=1
 	else
+		SOURCE_DB_HOST=$(echo "$SOURCE_WP_CONFIG" | grep '^\s*define.*DB_HOST' | awk -F',' '{print $2}' | sed "s/^[^']*'//" | sed "s/'[^']*//" | sed 's/^[^"]*"//' | sed 's/"[^"]*//')
 		SOURCE_DB_NAME=$(echo "$SOURCE_WP_CONFIG" | grep '^\s*define.*DB_NAME' | awk -F',' '{print $2}' | sed "s/^[^']*'//" | sed "s/'[^']*//" | sed 's/^[^"]*"//' | sed 's/"[^"]*//')
 		SOURCE_DB_USER=$(echo "$SOURCE_WP_CONFIG" | grep '^\s*define.*DB_USER' | awk -F',' '{print $2}' | sed "s/^[^']*'//" | sed "s/'[^']*//" | sed 's/^[^"]*"//' | sed 's/"[^"]*//')
 		SOURCE_DB_PASS=$(echo "$SOURCE_WP_CONFIG" | grep '^\s*define.*DB_PASSWORD' | awk -F',' '{print $2}' | sed "s/^[^']*'//" | sed "s/'[^']*//" | sed 's/^[^"]*"//' | sed 's/"[^"]*//')
 		SOURCE_DB_PREFIX=$(echo "$SOURCE_WP_CONFIG" | grep '^\s*\$table_prefix' | awk -F'=' '{print $2}' | sed "s/^[^']*'//" | sed "s/'[^']*//" | sed 's/^[^"]*"//' | sed 's/"[^"]*//')
 
-		if [ -z "$SOURCE_DB_NAME" ]; then
+		if [ -z "$SOURCE_DB_HOST" ]; then
+			$SETCOLOR_FAILURE
+			echo "[FAIL]"
+			echo "Can't get DB host!" 1>&2
+			$SETCOLOR_NORMAL
+			ERRORS_CHECK=1
+			FAIL_SOURCE_DB=1
+		elif [ -z "$SOURCE_DB_NAME" ]; then
 			$SETCOLOR_FAILURE
 			echo "[FAIL]"
 			echo "Can't get DB name!" 1>&2
@@ -1324,6 +1386,11 @@ if [ "$FAIL_BOTH_REMOTE" -eq 0 ] && [ "$FAIL_USER" -eq 0 ] && [ "$FAIL_REMOTE" -
 			$SETCOLOR_SUCCESS
 			echo "[OK]"
 			$SETCOLOR_NORMAL
+
+			if [[ "$SOURCE_DB_HOST" == *:* ]]; then
+				SOURCE_DB_PORT=$(echo "$SOURCE_DB_HOST" | awk -F ':' '{print $2}')
+				SOURCE_DB_HOST=$(echo "$SOURCE_DB_HOST" | awk -F ':' '{print $1}')
+			fi
 		fi
 	fi
 else
@@ -1336,9 +1403,9 @@ echo -n "Checking source DB and get WP site URL..."
 
 if [ "$FAIL_BOTH_REMOTE" -eq 0 ] && [ "$FAIL_USER" -eq 0 ] && [ "$FAIL_REMOTE" -eq 0 ] && [ "$FAIL_TMP_PATH" -eq 0 ] && [ "$FAIL_WP" -eq 0 ] && [ "$FAIL_SOURCE_DB" -eq 0 ]; then
 	if [ -z "$SOURCE_HOST" ]; then
-		SOURCE_SITE_URL=$(mysql -u "$SOURCE_DB_USER" -p"$SOURCE_DB_PASS" -BN -e "select option_value from ${SOURCE_DB_NAME}.${SOURCE_DB_PREFIX}options where option_name='siteurl' ;" 2>&1)
+		SOURCE_SITE_URL=$(mysql -h "$SOURCE_DB_HOST" -P "$SOURCE_DB_PORT" -u "$SOURCE_DB_USER" -p"$SOURCE_DB_PASS" -BN -e "select option_value from ${SOURCE_DB_NAME}.${SOURCE_DB_PREFIX}options where option_name='siteurl' ;" 2>&1)
 	else
-		SOURCE_SITE_URL=$($SETSID ssh "${SOURCE_USER}"@"${SOURCE_HOST}" -p "${SOURCE_PORT}" "mysql -u \"$SOURCE_DB_USER\" -p\"${SOURCE_DB_PASS}\" -BN -e \"select option_value from ${SOURCE_DB_NAME}.${SOURCE_DB_PREFIX}options where option_name='siteurl' ;\" 2>&1")
+		SOURCE_SITE_URL=$($SETSID ssh "${SOURCE_USER}"@"${SOURCE_HOST}" -p "${SOURCE_PORT}" "mysql -h \"$SOURCE_DB_HOST\" -P \"$SOURCE_DB_PORT\" -u \"$SOURCE_DB_USER\" -p\"${SOURCE_DB_PASS}\" -BN -e \"select option_value from ${SOURCE_DB_NAME}.${SOURCE_DB_PREFIX}options where option_name='siteurl' ;\" 2>&1")
 	fi
 
 	SOURCE_SITE_URL=$(echo "$SOURCE_SITE_URL" | grep -v 'Using a password')
@@ -1457,9 +1524,9 @@ echo -n "Checking target DB..."
 
 if [ "$FAIL_BOTH_REMOTE" -eq 0 ] && [ "$FAIL_USER" -eq 0 ] && [ "$FAIL_REMOTE" -eq 0 ] && [ "$FAIL_TMP_PATH" -eq 0 ]; then
 	if [ -z "$TARGET_HOST" ]; then
-		CHECK_TARGET_DB=$(mysql -u "$TARGET_DB_USER" -p"$TARGET_DB_PASS" -e "USE \"${TARGET_DB_NAME}\";" 2>&1)
+		CHECK_TARGET_DB=$(mysql -h "$TARGET_DB_HOST" -P "$TARGET_DB_PORT" -u "$TARGET_DB_USER" -p"$TARGET_DB_PASS" -e "USE \"${TARGET_DB_NAME}\";" 2>&1)
 	else
-		CHECK_TARGET_DB=$($SETSID ssh "${TARGET_USER}"@"${TARGET_HOST}" -p "${TARGET_PORT}" "mysql -u \"$TARGET_DB_USER\" -p\"${TARGET_DB_PASS}\" -e \"USE \"${TARGET_DB_NAME}\";\" 2>&1" 2>&1)
+		CHECK_TARGET_DB=$($SETSID ssh "${TARGET_USER}"@"${TARGET_HOST}" -p "${TARGET_PORT}" "mysql -h \"$TARGET_DB_HOST\" -P \"$TARGET_DB_PORT\" -u \"$TARGET_DB_USER\" -p\"${TARGET_DB_PASS}\" -e \"USE \"${TARGET_DB_NAME}\";\" 2>&1" 2>&1)
 	fi
 
 	CHECK_TARGET_DB=$(echo "$CHECK_TARGET_DB" | grep -v 'Using a password')
@@ -1553,12 +1620,20 @@ if [ "$ERRORS_CHECK" -eq 1 ]; then
 	exit 1
 fi
 
+# Prepare migration vars
+
 if [ -n "$SOURCE_DB_PASS" ]; then
 	CMD_SOURCE_DB_PASS="-p${SOURCE_DB_PASS}"
 fi
 
 SOURCE_SCRIPT_ERRORS_TMP="${SOURCE_TMP_PATH}/zwp_migrate.tmp.errors.${SCRIPT_INSTANCE_KEY}"
 TARGET_SCRIPT_ERRORS_TMP="${TARGET_TMP_PATH}/zwp_migrate.tmp.errors.${SCRIPT_INSTANCE_KEY}"
+
+if [ "$TARGET_DB_PORT" -eq 3306 ]; then
+	TARGET_DB_HOST_WP="$TARGET_DB_HOST"
+else
+	TARGET_DB_HOST_WP="${TARGET_DB_HOST}:${TARGET_DB_PORT}"
+fi
 
 # Total info
 
@@ -1576,6 +1651,7 @@ fi
 echo "${BOLD_TEXT}User:${NORMAL_TEXT} ${SOURCE_USER}"
 echo "${BOLD_TEXT}Path:${NORMAL_TEXT} ${SOURCE_PATH}"
 echo "${BOLD_TEXT}WP URL:${NORMAL_TEXT} ${SOURCE_SITE_URL}"
+echo "${BOLD_TEXT}DB host:${NORMAL_TEXT} ${SOURCE_DB_HOST} (port: ${SOURCE_DB_PORT})"
 echo "${BOLD_TEXT}DB name:${NORMAL_TEXT} ${SOURCE_DB_NAME}"
 echo "${BOLD_TEXT}DB user:${NORMAL_TEXT} ${SOURCE_DB_USER}"
 echo "${BOLD_TEXT}TMP path:${NORMAL_TEXT} ${SOURCE_TMP_PATH}"
@@ -1589,6 +1665,7 @@ fi
 echo "${BOLD_TEXT}User:${NORMAL_TEXT} ${TARGET_USER}"
 echo "${BOLD_TEXT}Path:${NORMAL_TEXT} ${TARGET_PATH}"
 echo "${BOLD_TEXT}WP URL:${NORMAL_TEXT} ${TARGET_SITE_URL}"
+echo "${BOLD_TEXT}DB host:${NORMAL_TEXT} ${TARGET_DB_HOST} (port: ${TARGET_DB_PORT})"
 echo "${BOLD_TEXT}DB name:${NORMAL_TEXT} ${TARGET_DB_NAME}"
 echo "${BOLD_TEXT}DB user:${NORMAL_TEXT} ${TARGET_DB_USER}"
 echo "${BOLD_TEXT}TMP path:${NORMAL_TEXT} ${TARGET_TMP_PATH}"
@@ -1653,10 +1730,10 @@ echo -n "Creating DB dump..."
 
 if [ "$ERRORS_MIGRATE" -eq 0 ]; then
 	if [ -z "$SOURCE_HOST" ]; then
-		mysqldump --insert-ignore --skip-lock-tables --single-transaction=TRUE --add-drop-table --no-tablespaces -u "$SOURCE_DB_USER" "$CMD_SOURCE_DB_PASS" "$SOURCE_DB_NAME" 2>"$SOURCE_SCRIPT_ERRORS_TMP" | gzip -c > "${SOURCE_PATH}"/"${SOURCE_DB_NAME}".sql.gz
+		mysqldump --insert-ignore --skip-lock-tables --single-transaction=TRUE --add-drop-table --no-tablespaces -h "$SOURCE_DB_HOST" -P "$SOURCE_DB_PORT" -u "$SOURCE_DB_USER" "$CMD_SOURCE_DB_PASS" "$SOURCE_DB_NAME" 2>"$SOURCE_SCRIPT_ERRORS_TMP" | gzip -c > "${SOURCE_PATH}"/"${SOURCE_DB_NAME}".sql.gz
 		RESULT_ERRORS=$(cat "$SOURCE_SCRIPT_ERRORS_TMP" | grep -v 'Using a password' 2>&1)
 	else
-		$SETSID ssh "${SOURCE_USER}"@"${SOURCE_HOST}" -p "${SOURCE_PORT}" "mysqldump --insert-ignore --skip-lock-tables --single-transaction=TRUE --add-drop-table --no-tablespaces -u \"$SOURCE_DB_USER\" \"$CMD_SOURCE_DB_PASS\" \"$SOURCE_DB_NAME\" 2>\"$SOURCE_SCRIPT_ERRORS_TMP\" | gzip -c > \"${SOURCE_PATH}\"/\"${SOURCE_DB_NAME}\".sql.gz"
+		$SETSID ssh "${SOURCE_USER}"@"${SOURCE_HOST}" -p "${SOURCE_PORT}" "mysqldump --insert-ignore --skip-lock-tables --single-transaction=TRUE --add-drop-table --no-tablespaces -h \"$SOURCE_DB_HOST\" -P \"$SOURCE_DB_PORT\" -u \"$SOURCE_DB_USER\" \"$CMD_SOURCE_DB_PASS\" \"$SOURCE_DB_NAME\" 2>\"$SOURCE_SCRIPT_ERRORS_TMP\" | gzip -c > \"${SOURCE_PATH}\"/\"${SOURCE_DB_NAME}\".sql.gz"
 		RESULT_ERRORS=$($SETSID ssh "${SOURCE_USER}"@"${SOURCE_HOST}" -p "${SOURCE_PORT}" "cat \"$SOURCE_SCRIPT_ERRORS_TMP\" | grep -v 'Using a password' 2>&1")
 	fi
 
@@ -1709,10 +1786,10 @@ echo -n "Importing DB..."
 
 if [ "$ERRORS_MIGRATE" -eq 0 ]; then
 	if [ -z "$TARGET_HOST" ]; then
-		gunzip -c "${TARGET_PATH}"/"${SOURCE_DB_NAME}".sql.gz | mysql -u "${TARGET_DB_USER}" "${CMD_TARGET_DB_PASS}" "${TARGET_DB_NAME}" 2>"$TARGET_SCRIPT_ERRORS_TMP"
+		gunzip -c "${TARGET_PATH}"/"${SOURCE_DB_NAME}".sql.gz | mysql -h "${TARGET_DB_HOST}" -P "${TARGET_DB_PORT}" -u "${TARGET_DB_USER}" "${CMD_TARGET_DB_PASS}" "${TARGET_DB_NAME}" 2>"$TARGET_SCRIPT_ERRORS_TMP"
 		RESULT_ERRORS=$(cat "$TARGET_SCRIPT_ERRORS_TMP" | grep -v 'Using a password' 2>&1)
 	else
-		$SETSID ssh "${TARGET_USER}"@"${TARGET_HOST}" -p "${TARGET_PORT}" "gunzip -c \"${TARGET_PATH}\"/\"${SOURCE_DB_NAME}\".sql.gz | mysql -u \"${TARGET_DB_USER}\" \"${CMD_TARGET_DB_PASS}\" \"${TARGET_DB_NAME}\" 2>\"$TARGET_SCRIPT_ERRORS_TMP\""
+		$SETSID ssh "${TARGET_USER}"@"${TARGET_HOST}" -p "${TARGET_PORT}" "gunzip -c \"${TARGET_PATH}\"/\"${SOURCE_DB_NAME}\".sql.gz | mysql -h \"${TARGET_DB_HOST}\" -P \"$TARGET_DB_PORT\" -u \"${TARGET_DB_USER}\" \"${CMD_TARGET_DB_PASS}\" \"${TARGET_DB_NAME}\" 2>\"$TARGET_SCRIPT_ERRORS_TMP\""
 		RESULT_ERRORS=$($SETSID ssh "${TARGET_USER}"@"${TARGET_HOST}" -p "${TARGET_PORT}" "cat \"$TARGET_SCRIPT_ERRORS_TMP\" | grep -v 'Using a password' 2>&1")
 	fi
 
@@ -1736,6 +1813,30 @@ echo -n "Updating credentials in wp-config.php"
 
 if [ "$ERRORS_MIGRATE" -eq 0 ]; then
 	echo ":"
+
+	echo -n "  DB_HOST..."
+
+	if [ -z "$TARGET_HOST" ]; then
+		if [[ $(whoami) == 'root' ]]; then
+			DB_HOST_CHANGE=$(su -l "${TARGET_USER}" -s /bin/bash -c "\"$WPCLI\" config set DB_HOST \"$TARGET_DB_HOST_WP\" --type=constant --path=\"${TARGET_PATH}\" 2>/dev/null")
+		else
+			DB_HOST_CHANGE=$("$WPCLI" config set DB_HOST "$TARGET_DB_HOST_WP" --type=constant --path="${TARGET_PATH}" 2>/dev/null)
+		fi
+	else
+		DB_HOST_CHANGE=$($SETSID ssh "${TARGET_USER}"@"${TARGET_HOST}" -p "${TARGET_PORT}" "\"$WPCLI\" config set DB_HOST \"$TARGET_DB_HOST_WP\" --type=constant --path=\"${TARGET_PATH}\" 2>/dev/null")
+	fi
+
+	if [[ "$DB_HOST_CHANGE" =~ "Success:" ]]; then
+		$SETCOLOR_SUCCESS
+		echo "[OK]"
+		$SETCOLOR_NORMAL
+	else
+		$SETCOLOR_FAILURE
+		echo "[FAIL]"
+		$SETCOLOR_NORMAL
+		ERRORS_MIGRATE=1
+	fi
+
 	echo -n "  DB_NAME..."
 
 	if [ -z "$TARGET_HOST" ]; then
