@@ -1341,11 +1341,11 @@ if [ "$FAIL_BOTH_REMOTE" -eq 0 ] && [ "$FAIL_USER" -eq 0 ] && [ "$FAIL_REMOTE" -
 		ERRORS_CHECK=1
 		FAIL_SOURCE_DB=1
 	else
-		SOURCE_DB_HOST=$(echo "$SOURCE_WP_CONFIG" | grep '^\s*define.*DB_HOST' | awk -F',' '{print $2}' | sed "s/^[^']*'//" | sed "s/'[^']*//" | sed 's/^[^"]*"//' | sed 's/"[^"]*//')
-		SOURCE_DB_NAME=$(echo "$SOURCE_WP_CONFIG" | grep '^\s*define.*DB_NAME' | awk -F',' '{print $2}' | sed "s/^[^']*'//" | sed "s/'[^']*//" | sed 's/^[^"]*"//' | sed 's/"[^"]*//')
-		SOURCE_DB_USER=$(echo "$SOURCE_WP_CONFIG" | grep '^\s*define.*DB_USER' | awk -F',' '{print $2}' | sed "s/^[^']*'//" | sed "s/'[^']*//" | sed 's/^[^"]*"//' | sed 's/"[^"]*//')
-		SOURCE_DB_PASS=$(echo "$SOURCE_WP_CONFIG" | grep '^\s*define.*DB_PASSWORD' | awk -F',' '{print $2}' | sed "s/^[^']*'//" | sed "s/'[^']*//" | sed 's/^[^"]*"//' | sed 's/"[^"]*//')
-		SOURCE_DB_PREFIX=$(echo "$SOURCE_WP_CONFIG" | grep '^\s*\$table_prefix' | awk -F'=' '{print $2}' | sed "s/^[^']*'//" | sed "s/'[^']*//" | sed 's/^[^"]*"//' | sed 's/"[^"]*//')
+		SOURCE_DB_HOST=$(echo "$SOURCE_WP_CONFIG" | grep '^\s*define.*DB_HOST' | tail -n 1 | awk -F',' '{print $2}' | sed "s/^[^']*'//" | sed "s/'[^']*//" | sed 's/^[^"]*"//' | sed 's/"[^"]*//')
+		SOURCE_DB_NAME=$(echo "$SOURCE_WP_CONFIG" | grep '^\s*define.*DB_NAME' | tail -n 1 | awk -F',' '{print $2}' | sed "s/^[^']*'//" | sed "s/'[^']*//" | sed 's/^[^"]*"//' | sed 's/"[^"]*//')
+		SOURCE_DB_USER=$(echo "$SOURCE_WP_CONFIG" | grep '^\s*define.*DB_USER' | tail -n 1 | awk -F',' '{print $2}' | sed "s/^[^']*'//" | sed "s/'[^']*//" | sed 's/^[^"]*"//' | sed 's/"[^"]*//')
+		SOURCE_DB_PASS=$(echo "$SOURCE_WP_CONFIG" | grep '^\s*define.*DB_PASSWORD' | tail -n 1 | awk -F',' '{print $2}' | sed "s/^[^']*'//" | sed "s/'[^']*//" | sed 's/^[^"]*"//' | sed 's/"[^"]*//')
+		SOURCE_DB_PREFIX=$(echo "$SOURCE_WP_CONFIG" | grep '^\s*\$table_prefix' | tail -n 1 | awk -F'=' '{print $2}' | sed "s/^[^']*'//" | sed "s/'[^']*//" | sed 's/^[^"]*"//' | sed 's/"[^"]*//')
 
 		if [ -z "$SOURCE_DB_HOST" ]; then
 			$SETCOLOR_FAILURE
