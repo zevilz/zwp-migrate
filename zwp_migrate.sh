@@ -3,7 +3,7 @@
 # URL: https://github.com/zevilz/zwp-migrate
 # Author: Alexandr "zEvilz" Emshanov
 # License: MIT
-# Version: 1.2.0
+# Version: 1.2.1
 
 # shellcheck disable=SC2046
 # shellcheck disable=SC2089
@@ -325,6 +325,7 @@ while true ; do
 
 	elif [ "${1#--target-site-url=}" != "$1" ] ; then
 		TARGET_SITE_URL="${1#--target-site-url=}"
+		TARGET_SITE_URL=$(echo "$TARGET_SITE_URL" | sed 's/\/$//')
 
 	elif [ "${1#--target-db-host=}" != "$1" ] ; then
 		TARGET_DB_HOST="${1#--target-db-host=}"
@@ -706,6 +707,7 @@ if [ $INTERACTIVE -eq 1 ]; then
 			echo "URL is empty!"
 			$SETCOLOR_NORMAL
 		else
+			TARGET_SITE_URL=$(echo "$TARGET_SITE_URL" | sed 's/\/$//')
 			if [ $(checkUrlFormat "$TARGET_SITE_URL") -eq 0 ]; then
 				$SETCOLOR_FAILURE
 				echo "Wrong url format!"
@@ -947,6 +949,8 @@ else
 		$SETCOLOR_NORMAL
 		ERRORS_CHECK=1
 	fi
+
+	TARGET_SITE_URL=$(echo "$TARGET_SITE_URL" | sed 's/\/$//')
 
 	if [ -z "$TARGET_SITE_URL" ]; then
 		if [ "$ERRORS_CHECK" -eq 0 ]; then
@@ -1408,7 +1412,7 @@ if [ "$FAIL_BOTH_REMOTE" -eq 0 ] && [ "$FAIL_USER" -eq 0 ] && [ "$FAIL_REMOTE" -
 		SOURCE_SITE_URL=$($SETSID ssh "${SOURCE_USER}"@"${SOURCE_HOST}" -p "${SOURCE_PORT}" "mysql -h \"$SOURCE_DB_HOST\" -P \"$SOURCE_DB_PORT\" -u \"$SOURCE_DB_USER\" -p\"${SOURCE_DB_PASS}\" -BN -e \"select option_value from ${SOURCE_DB_NAME}.${SOURCE_DB_PREFIX}options where option_name='siteurl' ;\" 2>&1")
 	fi
 
-	SOURCE_SITE_URL=$(echo "$SOURCE_SITE_URL" | grep -v 'Using a password')
+	SOURCE_SITE_URL=$(echo "$SOURCE_SITE_URL" | grep -v 'Using a password' | sed 's/\/$//')
 
 	if [ "$?" -eq 255 ] && [ -n "$SOURCE_HOST" ]; then
 		$SETCOLOR_FAILURE
