@@ -1,4 +1,4 @@
-# WordPress migration tool [![Version](https://img.shields.io/badge/version-v1.2.0-brightgreen.svg)](https://github.com/zevilz/zwp-migrate/releases/tag/1.2.0)
+# WordPress migration tool [![Version](https://img.shields.io/badge/version-v1.2.1-brightgreen.svg)](https://github.com/zevilz/zwp-migrate/releases/tag/1.2.1)
 
 Simple tool for migrate WordPress sites between servers and shared hostings with SSH access via rsync and WP-CLI (including local migrations).
 
@@ -176,6 +176,8 @@ NOTE: add a space in front of the command to avoid getting the password in the c
 - [x] ~~support for backup/restore on non localhost db servers;~~
 - [ ] support for change db backup/restore method (direct/WP-CLI);
 - [ ] support for both remote servers;
+- [ ] support for replacing paths in files;
+- [ ] support for set custom db credentials for source host (usable for custom wp-config.php with multiple identical creds with different values);
 - [ ] support for different remote user and remote site owner;
 - [ ] support for run the script as users with sudo;
 - [ ] support for set custom SSH key path;
@@ -187,6 +189,7 @@ NOTE: add a space in front of the command to avoid getting the password in the c
 
 ## Changelog
 
+- 2023.08.13 - 1.2.1 - Removed trailing slashes in source and target site urls
 - 2023.07.31 - 1.2.0 - Added support for backup/restore on non localhost db servers
 - 2023.07.13 - 1.1.0 - Added support for sync exclude list by new `--files-exclude=<patterns>` parameter
 - 2023.07.12 - 1.0.1 - [Bugfixes](https://github.com/zevilz/zwp-migrate/releases/tag/1.0.1)
