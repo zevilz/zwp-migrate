@@ -264,6 +264,7 @@ TARGET_DB_PASS=
 TARGET_TMP_PATH=
 TARGET_SCRIPT_ERRORS_TMP=
 TARGET_WPCLI_PATH=
+TARGET_PHP_PATH=
 
 # migration vars
 RSYNC_SOURCE_HOST=
@@ -341,6 +342,9 @@ while true ; do
 
 	elif [ "${1#--files-exclude=}" != "$1" ] ; then
 		RSYNC_EXCLUDE_LIST="${RSYNC_EXCLUDE_LIST} ${1#--files-exclude=}"
+
+	elif [ "${1#--target-wpcli-path=}" != "$1" ] ; then
+		TARGET_WPCLI_PATH="${1#--target-wpcli-path=}"
 
 	elif [ -z "$1" ] ; then
 		break
@@ -1589,10 +1593,18 @@ fi
 echo -n "Checking for WP-CLI on target host..."
 
 if [ "$FAIL_BOTH_REMOTE" -eq 0 ] && [ "$FAIL_USER" -eq 0 ] && [ "$FAIL_REMOTE" -eq 0 ] && [ "$FAIL_TMP_PATH" -eq 0 ]; then
-	if [ -z "$TARGET_HOST" ]; then
-		TARGET_WPCLI_PATH=$(type -p wp 2>/dev/null)
+	if [ -z "$TARGET_WPCLI_PATH" ]; then
+		if [ -z "$TARGET_HOST" ]; then
+			TARGET_WPCLI_PATH=$(type -p wp 2>/dev/null)
+		else
+			TARGET_WPCLI_PATH=$($SETSID ssh "${TARGET_USER}"@"${TARGET_HOST}" -p "${TARGET_PORT}" "type -p wp" 2>/dev/null)
+		fi
 	else
-		TARGET_WPCLI_PATH=$($SETSID ssh "${TARGET_USER}"@"${TARGET_HOST}" -p "${TARGET_PORT}" "type -p wp" 2>/dev/null)
+		if [ -z "$TARGET_HOST" ]; then
+			TARGET_WPCLI_PATH=$(ls "$TARGET_WPCLI_PATH" 2>/dev/null)
+		else
+			TARGET_WPCLI_PATH=$($SETSID ssh "${TARGET_USER}"@"${TARGET_HOST}" -p "${TARGET_PORT}" "ls ${TARGET_WPCLI_PATH}" 2>/dev/null)
+		fi
 	fi
 
 	if [ "$?" -eq 255 ]; then
@@ -1601,7 +1613,7 @@ if [ "$FAIL_BOTH_REMOTE" -eq 0 ] && [ "$FAIL_USER" -eq 0 ] && [ "$FAIL_REMOTE" -
 		echo "Can't connect to source remote host!" 1>&2
 		$SETCOLOR_NORMAL
 		ERRORS_CHECK=1
-	elif [ -n "$TARGET_WPCLI_PATH" ] && [[ "$TARGET_WPCLI_PATH" =~ /wp$ ]]; then
+	elif [ -n "$TARGET_WPCLI_PATH" ]; then
 		$SETCOLOR_SUCCESS
 		echo "[OK]"
 		$SETCOLOR_NORMAL
