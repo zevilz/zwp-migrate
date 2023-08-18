@@ -286,6 +286,9 @@ SCRIPT_SSH_PASS_TMP="${TMPDIR-/tmp}/zwp_migrate.tmp.sshpass.${SCRIPT_INSTANCE_KE
 WPCLI=
 WPCLI_DOWNLOADED=0
 
+# php
+PHP=
+
 # Parse options
 
 while true ; do
@@ -345,6 +348,9 @@ while true ; do
 
 	elif [ "${1#--target-wpcli-path=}" != "$1" ] ; then
 		TARGET_WPCLI_PATH="${1#--target-wpcli-path=}"
+
+	elif [ "${1#--target-php-path=}" != "$1" ] ; then
+		TARGET_PHP_PATH="${1#--target-php-path=}"
 
 	elif [ -z "$1" ] ; then
 		break
@@ -1629,6 +1635,45 @@ else
 	$SETCOLOR_NORMAL
 fi
 
+echo -n "Checking for PHP on target host..."
+
+if [ "$FAIL_BOTH_REMOTE" -eq 0 ] && [ "$FAIL_USER" -eq 0 ] && [ "$FAIL_REMOTE" -eq 0 ] && [ "$FAIL_TMP_PATH" -eq 0 ]; then
+	if [ -z "$TARGET_PHP_PATH" ]; then
+		if [ -z "$TARGET_HOST" ]; then
+			TARGET_PHP_PATH=$(type -p php 2>/dev/null)
+		else
+			TARGET_PHP_PATH=$($SETSID ssh "${TARGET_USER}"@"${TARGET_HOST}" -p "${TARGET_PORT}" "type -p php" 2>/dev/null)
+		fi
+	else
+		if [ -z "$TARGET_HOST" ]; then
+			TARGET_PHP_PATH=$(ls "$TARGET_PHP_PATH" 2>/dev/null)
+		else
+			TARGET_PHP_PATH=$($SETSID ssh "${TARGET_USER}"@"${TARGET_HOST}" -p "${TARGET_PORT}" "ls ${TARGET_PHP_PATH}" 2>/dev/null)
+		fi
+	fi
+
+	if [ "$?" -eq 255 ]; then
+		$SETCOLOR_FAILURE
+		echo "[FAIL]"
+		echo "Can't connect to source remote host!" 1>&2
+		$SETCOLOR_NORMAL
+		ERRORS_CHECK=1
+	elif [ -n "$TARGET_PHP_PATH" ]; then
+		$SETCOLOR_SUCCESS
+		echo "[OK]"
+		$SETCOLOR_NORMAL
+		PHP="$TARGET_PHP_PATH"
+	else
+		$SETCOLOR_FAILURE
+		echo "[NOT FOUND]"
+		$SETCOLOR_NORMAL
+	fi
+else
+	$SETCOLOR_GREY
+	echo "[SKIPPING]"
+	$SETCOLOR_NORMAL
+fi
+
 echo
 
 if [ "$ERRORS_CHECK" -eq 1 ]; then
@@ -1691,6 +1736,7 @@ if [ -n "$WPCLI" ]; then
 else
 	echo "not found (it will be temporary download before migration)"
 fi
+echo "${BOLD_TEXT}PHP path:${NORMAL_TEXT} ${TARGET_PHP_PATH}"
 if [ -f "$RSYNC_EXCLUDE_LIST_FILE" ] && [ -n "$(cat $RSYNC_EXCLUDE_LIST_FILE)" ]; then
 	echo
 	echo "${BOLD_TEXT}File patterns to exclude:${NORMAL_TEXT}"
@@ -1834,12 +1880,12 @@ if [ "$ERRORS_MIGRATE" -eq 0 ]; then
 
 	if [ -z "$TARGET_HOST" ]; then
 		if [[ $(whoami) == 'root' ]]; then
-			DB_HOST_CHANGE=$(su -l "${TARGET_USER}" -s /bin/bash -c "\"$WPCLI\" config set DB_HOST \"$TARGET_DB_HOST_WP\" --type=constant --path=\"${TARGET_PATH}\" 2>/dev/null")
+			DB_HOST_CHANGE=$(su -l "${TARGET_USER}" -s /bin/bash -c "\"$PHP\" \"$WPCLI\" config set DB_HOST \"$TARGET_DB_HOST_WP\" --type=constant --path=\"${TARGET_PATH}\" 2>/dev/null")
 		else
-			DB_HOST_CHANGE=$("$WPCLI" config set DB_HOST "$TARGET_DB_HOST_WP" --type=constant --path="${TARGET_PATH}" 2>/dev/null)
+			DB_HOST_CHANGE=$("$PHP" "$WPCLI" config set DB_HOST "$TARGET_DB_HOST_WP" --type=constant --path="${TARGET_PATH}" 2>/dev/null)
 		fi
 	else
-		DB_HOST_CHANGE=$($SETSID ssh "${TARGET_USER}"@"${TARGET_HOST}" -p "${TARGET_PORT}" "\"$WPCLI\" config set DB_HOST \"$TARGET_DB_HOST_WP\" --type=constant --path=\"${TARGET_PATH}\" 2>/dev/null")
+		DB_HOST_CHANGE=$($SETSID ssh "${TARGET_USER}"@"${TARGET_HOST}" -p "${TARGET_PORT}" "\"$PHP\" \"$WPCLI\" config set DB_HOST \"$TARGET_DB_HOST_WP\" --type=constant --path=\"${TARGET_PATH}\" 2>/dev/null")
 	fi
 
 	if [[ "$DB_HOST_CHANGE" =~ "Success:" ]]; then
@@ -1857,12 +1903,12 @@ if [ "$ERRORS_MIGRATE" -eq 0 ]; then
 
 	if [ -z "$TARGET_HOST" ]; then
 		if [[ $(whoami) == 'root' ]]; then
-			DB_NAME_CHANGE=$(su -l "${TARGET_USER}" -s /bin/bash -c "\"$WPCLI\" config set DB_NAME \"$TARGET_DB_NAME\" --type=constant --path=\"${TARGET_PATH}\" 2>/dev/null")
+			DB_NAME_CHANGE=$(su -l "${TARGET_USER}" -s /bin/bash -c "\"$PHP\" \"$WPCLI\" config set DB_NAME \"$TARGET_DB_NAME\" --type=constant --path=\"${TARGET_PATH}\" 2>/dev/null")
 		else
-			DB_NAME_CHANGE=$("$WPCLI" config set DB_NAME "$TARGET_DB_NAME" --type=constant --path="${TARGET_PATH}" 2>/dev/null)
+			DB_NAME_CHANGE=$("$PHP" "$WPCLI" config set DB_NAME "$TARGET_DB_NAME" --type=constant --path="${TARGET_PATH}" 2>/dev/null)
 		fi
 	else
-		DB_NAME_CHANGE=$($SETSID ssh "${TARGET_USER}"@"${TARGET_HOST}" -p "${TARGET_PORT}" "\"$WPCLI\" config set DB_NAME \"$TARGET_DB_NAME\" --type=constant --path=\"${TARGET_PATH}\" 2>/dev/null")
+		DB_NAME_CHANGE=$($SETSID ssh "${TARGET_USER}"@"${TARGET_HOST}" -p "${TARGET_PORT}" "\"$PHP\" \"$WPCLI\" config set DB_NAME \"$TARGET_DB_NAME\" --type=constant --path=\"${TARGET_PATH}\" 2>/dev/null")
 	fi
 
 	if [[ "$DB_NAME_CHANGE" =~ "Success:" ]]; then
@@ -1880,12 +1926,12 @@ if [ "$ERRORS_MIGRATE" -eq 0 ]; then
 
 	if [ -z "$TARGET_HOST" ]; then
 		if [[ $(whoami) == 'root' ]]; then
-			DB_USER_CHANGE=$(su -l "${TARGET_USER}" -s /bin/bash -c "\"$WPCLI\" config set DB_USER \"$TARGET_DB_USER\" --type=constant --path=\"${TARGET_PATH}\" 2>/dev/null")
+			DB_USER_CHANGE=$(su -l "${TARGET_USER}" -s /bin/bash -c "\"$PHP\" \"$WPCLI\" config set DB_USER \"$TARGET_DB_USER\" --type=constant --path=\"${TARGET_PATH}\" 2>/dev/null")
 		else
-			DB_USER_CHANGE=$("$WPCLI" config set DB_USER "$TARGET_DB_USER" --type=constant --path="${TARGET_PATH}" 2>/dev/null)
+			DB_USER_CHANGE=$("$PHP" "$WPCLI" config set DB_USER "$TARGET_DB_USER" --type=constant --path="${TARGET_PATH}" 2>/dev/null)
 		fi
 	else
-		DB_USER_CHANGE=$($SETSID ssh "${TARGET_USER}"@"${TARGET_HOST}" -p "${TARGET_PORT}" "\"$WPCLI\" config set DB_USER \"$TARGET_DB_USER\" --type=constant --path=\"${TARGET_PATH}\" 2>/dev/null")
+		DB_USER_CHANGE=$($SETSID ssh "${TARGET_USER}"@"${TARGET_HOST}" -p "${TARGET_PORT}" "\"$PHP\" \"$WPCLI\" config set DB_USER \"$TARGET_DB_USER\" --type=constant --path=\"${TARGET_PATH}\" 2>/dev/null")
 	fi
 
 	if [[ "$DB_USER_CHANGE" =~ "Success:" ]]; then
@@ -1903,12 +1949,12 @@ if [ "$ERRORS_MIGRATE" -eq 0 ]; then
 
 	if [ -z "$TARGET_HOST" ]; then
 		if [[ $(whoami) == 'root' ]]; then
-			DB_PASS_CHANGE=$(su -l "${TARGET_USER}" -s /bin/bash -c "\"$WPCLI\" config set DB_PASSWORD \"$TARGET_DB_PASS\" --type=constant --path=\"${TARGET_PATH}\" 2>/dev/null")
+			DB_PASS_CHANGE=$(su -l "${TARGET_USER}" -s /bin/bash -c "\"$PHP\" \"$WPCLI\" config set DB_PASSWORD \"$TARGET_DB_PASS\" --type=constant --path=\"${TARGET_PATH}\" 2>/dev/null")
 		else
-			DB_PASS_CHANGE=$("$WPCLI" config set DB_PASSWORD "$TARGET_DB_PASS" --type=constant --path="${TARGET_PATH}" 2>/dev/null)
+			DB_PASS_CHANGE=$("$PHP" "$WPCLI" config set DB_PASSWORD "$TARGET_DB_PASS" --type=constant --path="${TARGET_PATH}" 2>/dev/null)
 		fi
 	else
-		DB_PASS_CHANGE=$($SETSID ssh "${TARGET_USER}"@"${TARGET_HOST}" -p "${TARGET_PORT}" "\"$WPCLI\" config set DB_PASSWORD \"$TARGET_DB_PASS\" --type=constant --path=\"${TARGET_PATH}\" 2>/dev/null")
+		DB_PASS_CHANGE=$($SETSID ssh "${TARGET_USER}"@"${TARGET_HOST}" -p "${TARGET_PORT}" "\"$PHP\" \"$WPCLI\" config set DB_PASSWORD \"$TARGET_DB_PASS\" --type=constant --path=\"${TARGET_PATH}\" 2>/dev/null")
 	fi
 
 	if [[ "$DB_PASS_CHANGE" =~ "Success:" ]]; then
@@ -1933,12 +1979,12 @@ echo -n "Replacing URLs in DB..."
 if [ "$ERRORS_MIGRATE" -eq 0 ] && [[ "$SOURCE_SITE_URL" != "$TARGET_SITE_URL" ]]; then
 	if [ -z "$TARGET_HOST" ]; then
 		if [[ $(whoami) == 'root' ]]; then
-			REPLACING_RESULT=$(su -l "${TARGET_USER}" -s /bin/bash -c "\"$WPCLI\" search-replace \"$SOURCE_SITE_URL\" \"$TARGET_SITE_URL\" --all-tables --report-changed-only --path=\"${TARGET_PATH}\" 2>/dev/null")
+			REPLACING_RESULT=$(su -l "${TARGET_USER}" -s /bin/bash -c "\"$PHP\" \"$WPCLI\" search-replace \"$SOURCE_SITE_URL\" \"$TARGET_SITE_URL\" --all-tables --report-changed-only --path=\"${TARGET_PATH}\" 2>/dev/null")
 		else
-			REPLACING_RESULT=$("$WPCLI" search-replace "$SOURCE_SITE_URL" "$TARGET_SITE_URL" --all-tables --report-changed-only --path="${TARGET_PATH}" 2>/dev/null)
+			REPLACING_RESULT=$("$PHP" "$WPCLI" search-replace "$SOURCE_SITE_URL" "$TARGET_SITE_URL" --all-tables --report-changed-only --path="${TARGET_PATH}" 2>/dev/null)
 		fi
 	else
-		REPLACING_RESULT=$($SETSID ssh "${TARGET_USER}"@"${TARGET_HOST}" -p "${TARGET_PORT}" "\"$WPCLI\" search-replace \"$SOURCE_SITE_URL\" \"$TARGET_SITE_URL\" --all-tables --report-changed-only --path=\"${TARGET_PATH}\" 2>/dev/null")
+		REPLACING_RESULT=$($SETSID ssh "${TARGET_USER}"@"${TARGET_HOST}" -p "${TARGET_PORT}" "\"$PHP\" \"$WPCLI\" search-replace \"$SOURCE_SITE_URL\" \"$TARGET_SITE_URL\" --all-tables --report-changed-only --path=\"${TARGET_PATH}\" 2>/dev/null")
 	fi
 
 	if [[ "$REPLACING_RESULT" =~ "Success:" ]]; then
@@ -1975,12 +2021,12 @@ echo -n "Replacing paths in DB..."
 if [ "$ERRORS_MIGRATE" -eq 0 ] && [[ "$SOURCE_PATH" != "$TARGET_PATH" ]]; then
 	if [ -z "$TARGET_HOST" ]; then
 		if [[ $(whoami) == 'root' ]]; then
-			REPLACING_RESULT=$(su -l "${TARGET_USER}" -s /bin/bash -c "\"$WPCLI\" search-replace \"$SOURCE_PATH\" \"$TARGET_PATH\" --all-tables --report-changed-only --path=\"${TARGET_PATH}\" 2>/dev/null")
+			REPLACING_RESULT=$(su -l "${TARGET_USER}" -s /bin/bash -c "\"$PHP\" \"$WPCLI\" search-replace \"$SOURCE_PATH\" \"$TARGET_PATH\" --all-tables --report-changed-only --path=\"${TARGET_PATH}\" 2>/dev/null")
 		else
-			REPLACING_RESULT=$("$WPCLI" search-replace "$SOURCE_PATH" "$TARGET_PATH" --all-tables --report-changed-only --path="${TARGET_PATH}" 2>/dev/null)
+			REPLACING_RESULT=$("$PHP" "$WPCLI" search-replace "$SOURCE_PATH" "$TARGET_PATH" --all-tables --report-changed-only --path="${TARGET_PATH}" 2>/dev/null)
 		fi
 	else
-		REPLACING_RESULT=$($SETSID ssh "${TARGET_USER}"@"${TARGET_HOST}" -p "${TARGET_PORT}" "\"$WPCLI\" search-replace \"$SOURCE_PATH\" \"$TARGET_PATH\" --all-tables --report-changed-only --path=\"${TARGET_PATH}\" 2>/dev/null")
+		REPLACING_RESULT=$($SETSID ssh "${TARGET_USER}"@"${TARGET_HOST}" -p "${TARGET_PORT}" "\"$PHP\" \"$WPCLI\" search-replace \"$SOURCE_PATH\" \"$TARGET_PATH\" --all-tables --report-changed-only --path=\"${TARGET_PATH}\" 2>/dev/null")
 	fi
 
 	if [[ "$REPLACING_RESULT" =~ "Success:" ]]; then
@@ -2019,12 +2065,12 @@ echo -n "  flushing wp cache..."
 if [ "$ERRORS_MIGRATE" -eq 0 ]; then
 	if [ -z "$TARGET_HOST" ]; then
 		if [[ $(whoami) == 'root' ]]; then
-			WP_FLUSH_CACHE_RESULT=$(su -l "${TARGET_USER}" -s /bin/bash -c "\"$WPCLI\" cache flush --path=\"${TARGET_PATH}\" 2>/dev/null")
+			WP_FLUSH_CACHE_RESULT=$(su -l "${TARGET_USER}" -s /bin/bash -c "\"$PHP\" \"$WPCLI\" cache flush --path=\"${TARGET_PATH}\" 2>/dev/null")
 		else
-			WP_FLUSH_CACHE_RESULT=$("$WPCLI" cache flush --path="${TARGET_PATH}" 2>/dev/null)
+			WP_FLUSH_CACHE_RESULT=$("$PHP" "$WPCLI" cache flush --path="${TARGET_PATH}" 2>/dev/null)
 		fi
 	else
-		WP_FLUSH_CACHE_RESULT=$($SETSID ssh "${TARGET_USER}"@"${TARGET_HOST}" -p "${TARGET_PORT}" "\"$WPCLI\" cache flush --path=\"${TARGET_PATH}\" 2>/dev/null")
+		WP_FLUSH_CACHE_RESULT=$($SETSID ssh "${TARGET_USER}"@"${TARGET_HOST}" -p "${TARGET_PORT}" "\"$PHP\" \"$WPCLI\" cache flush --path=\"${TARGET_PATH}\" 2>/dev/null")
 	fi
 
 	if [[ "$WP_FLUSH_CACHE_RESULT" =~ "Success:" ]]; then
