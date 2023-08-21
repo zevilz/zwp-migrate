@@ -160,50 +160,63 @@ usage()
 	echo
 	echo "Usage: bash $0 [options]"
 	echo
-	echo "Migrate WordPress installations via SSH."
+	echo "Simple tool for right migrate WordPress sites between servers and shared hostings "
+	echo "with SSH access via rsync and WP-CLI"
 	echo
 	echo "Parameters:"
 	echo
-	echo "    -h, --help                  Shows this help."
+	echo "    -h, --help                     Shows this help."
 	echo
-	echo "    -v, --version               Shows script version."
+	echo "    -v, --version                  Shows script version."
 	echo
-	echo "    -q, --quiet                 Automatically confirm migration after checks."
+	echo "    -q, --quiet                    Automatically confirm migration after checks."
 
-	echo "    --non-interactive           Enable non-interactive mode."
+	echo "    --non-interactive              Enable non-interactive mode."
 	echo
-	echo "    --source-host=<host>:<port> Source host IP/hostname with ssh port (if it not 22) "
-	echo "                                separated by colon (don't set it if you run script "
-	echo "                                on this host)."
+	echo "    --source-host=<host>:<port>    Source host IP/hostname with ssh port (if it not 22) "
+	echo "                                   separated by colon (don't set it if you run script "
+	echo "                                   on this host)."
 	echo
-	echo "    --source-user=<username>    System user on source host (source site owner)."
+	echo "    --source-user=<username>       System user on source host (source site owner)."
 	echo
-	echo "    --source-user-pass='<pass>' System user password on source host (password "
-	echo "                                of source site owner; don't set it if you run "
-	echo "                                script as this user)."
+	echo "    --source-user-pass='<pass>'    System user password on source host (password "
+	echo "                                   of source site owner; don't set it if you run "
+	echo "                                   script as this user)."
 	echo
-	echo "    --source-path=<path>        Full path to source site root."
+	echo "    --source-path=<path>           Full path to source site root."
 	echo
-	echo "    --target-host=<host>:<port> Target host IP/hostname with ssh port (if it not 22) "
-	echo "                                separated by colon (don't set it if you run script "
-	echo "                                on this host)."
+	echo "    --target-host=<host>:<port>    Target host IP/hostname with ssh port (if it not 22) "
+	echo "                                   separated by colon (don't set it if you run script "
+	echo "                                   on this host)."
 	echo
-	echo "    --target-user=<username>    System user on target host (target site owner)."
+	echo "    --target-user=<username>       System user on target host (target site owner)."
 	echo
-	echo "    --target-user-pass='<pass>' System user password on target host (password "
-	echo "                                of target site owner; don't set it if you run "
-	echo "                                script as this user)."
+	echo "    --target-user-pass='<pass>'    System user password on target host (password "
+	echo "                                   of target site owner; don't set it if you run "
+	echo "                                   script as this user)."
 	echo
-	echo "    --target-path=<path>        Full path to target site root."
+	echo "    --target-path=<path>           Full path to target site root."
 	echo
-	echo "    --target-site-url=<url>     Full url of target site with protocol (http/https)."
+	echo "    --target-site-url=<url>        Full url of target site with protocol (http/https)."
 	echo
-	echo "    --target-db-name=<database> Target site database name."
+	echo "    --target-db-host=<host>:<port> Target site database host with port (if it not "
+	echo "                                   default 3306) separated by colon (don't set it if "
+	echo "                                   db server is localhost with default 3306 port)."
 	echo
-	echo "    --target-db-user=<user>     Target site database user with full access rights "
-	echo "                                to target site database."
+	echo "    --target-db-name=<database>    Target site database name."
 	echo
-	echo "    --target-db-pass=<pass>     Target site database user password."
+	echo "    --target-db-user=<user>        Target site database user with full access rights "
+	echo "                                   to target site database."
+	echo
+	echo "    --target-db-pass=<pass>        Target site database user password."
+	echo
+	echo "    --target-wpcli-path=<path>     Custom WP-CLI path."
+	echo
+	echo "    --target-php-path=<path>       Path to custom PHP binary for running WP-CLI."
+	echo
+	echo "    --files-exclude=<patterns>     File patterns to exclude from files sync separated "
+	echo "                                   by spaces (pattern `wp-content/cache` already included "
+	echo "                                   to this list)."
 	echo
 }
 
