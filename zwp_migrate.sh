@@ -220,6 +220,7 @@ NORMAL_TEXT=$(tput sgr0)
 INTERACTIVE=1
 NO_ASK=0
 HELP=0
+SHOW_VERSION=0
 #SCRIPT_LOGS_DIR="/var/log/zwp_migrate"
 
 # errors
@@ -301,6 +302,9 @@ while true ; do
 	elif [[ "$1" = "--help" || "$1" = "-h" ]] ; then
 		HELP=1
 
+	elif [[ "$1" = "--version" || "$1" = "-v" ]] ; then
+		SHOW_VERSION=1
+
 	elif [ "${1#--source-host=}" != "$1" ] ; then
 		SOURCE_HOST="${1#--source-host=}"
 
@@ -369,6 +373,14 @@ done
 
 if [ "$HELP" -eq 1 ]; then
 	usage
+	exit 0
+fi
+
+# Show version
+
+if [ $SHOW_VERSION -eq 1 ]; then
+	CUR_VERSION=$(grep 'Version:\ ' $0 | cut -d ' ' -f3)
+	echo $CUR_VERSION
 	exit 0
 fi
 
