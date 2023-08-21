@@ -1,6 +1,6 @@
-# WordPress migration tool [![Version](https://img.shields.io/badge/version-v1.2.1-brightgreen.svg)](https://github.com/zevilz/zwp-migrate/releases/tag/1.2.1)
+# WordPress migration tool [![Version](https://img.shields.io/badge/version-v1.3.0-brightgreen.svg)](https://github.com/zevilz/zwp-migrate/releases/tag/1.3.0)
 
-Simple tool for migrate WordPress sites between servers and shared hostings with SSH access via rsync and WP-CLI (including local migrations).
+Simple tool for right migrate WordPress sites between servers and shared hostings with SSH access via rsync and WP-CLI (including local migrations).
 
 ## Features
 
@@ -8,7 +8,8 @@ Simple tool for migrate WordPress sites between servers and shared hostings with
 - migrating from remote to local server;
 - local migrations;
 - using WP-CLI for right urls and paths replacements in database;
-- autodownloading WP-CLI to target server if it not installed.
+- autodownloading WP-CLI to target server if it not installed;
+- replacing paths in files.
 
 ## Requirements
 
@@ -41,6 +42,7 @@ ssh-add -d ~/.ssh/id_rsa
 Common parameters:
 
 - `-h (--help)` - shows a help message;
+- `-v (--version)` - shows script version;
 - `-q (--quiet)` - automatically confirm migration after checks.
 
 Non-interactive mode only parameters:
@@ -59,6 +61,8 @@ Non-interactive mode only parameters:
 - `--target-db-name=<database>` - target site database name (usage: `--target-db-name=db`);
 - `--target-db-user=<username>` - target site database user with full access rights to target site database (usage: `--target-db-user=db_user`);
 - `--target-db-pass=<password>` - target site database user password (usage: `--target-db-pass='qwerty123'`);
+- `--target-wpcli-path=<path>` - custom WP-CLI path (usage: `--target-wpcli-path=/tmp/wp-cli.phar`);
+- `--target-php-path=<path>` - path to custom PHP binary for running WP-CLI (usage: `--target-php-path=/usr/bin/php8.0`);
 - `--files-exclude=<patterns>` - file patterns to exclude from files sync separated by spaces (pattern `wp-content/cache` already included to this list; usage: `--files-exclude="wp-config.php wp-content/tmp/*"`).
 
 ## Usage
@@ -171,24 +175,26 @@ NOTE: add a space in front of the command to avoid getting the password in the c
 ## TODO
 
 - [x] ~~support for sync exclude list;~~
-- [ ] support for set WP-CLI custom path;
+- [x] ~~support for set WP-CLI custom path;~~
 - [ ] support for using WP-CLI on source host;
 - [x] ~~support for backup/restore on non localhost db servers;~~
 - [ ] support for change db backup/restore method (direct/WP-CLI);
 - [ ] support for both remote servers;
-- [ ] support for replacing paths in files;
+- [x] ~~support for replacing paths in files;~~
 - [ ] support for set custom db credentials for source host (usable for custom wp-config.php with multiple identical creds with different values);
 - [ ] support for different remote user and remote site owner;
 - [ ] support for run the script as users with sudo;
 - [ ] support for set custom SSH key path;
 - [ ] support for check DB user write access to DB on target host (now checks only usage);
-- [ ] support for set custom PHP version for WP-CLI (source/target);
+- [x] ~~support for set custom PHP version for WP-CLI (on target host);~~
 - [ ] checking neccessary disk space on source host;
+- [ ] support for using [SRDB](https://github.com/interconnectit/Search-Replace-DB) instead of WP-CLI for replacing urls and paths in database (to avoid errors if there are fatal errors in the site code);
 - [ ] decrease number of parameters;
 - [ ] logging.
 
 ## Changelog
 
+- 2023.08.21 - 1.3.0 - Added support for replace paths in files and custom WP-CLI and PHP paths
 - 2023.08.13 - 1.2.1 - Removed trailing slashes in source and target site urls
 - 2023.07.31 - 1.2.0 - Added support for backup/restore on non localhost db servers
 - 2023.07.13 - 1.1.0 - Added support for sync exclude list by new `--files-exclude=<patterns>` parameter
