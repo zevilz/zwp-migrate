@@ -2058,6 +2058,66 @@ else
 	$SETCOLOR_NORMAL
 fi
 
+echo -n "Replacing paths in files..."
+
+if [ "$ERRORS_MIGRATE" -eq 0 ] && [[ "$SOURCE_PATH" != "$TARGET_PATH" ]]; then
+	if [ -z "$TARGET_HOST" ]; then
+		if [[ $(whoami) == 'root' ]]; then
+			FILES_FOR_REPLACEMENT=$(su -l "${TARGET_USER}" -s /bin/bash -c "grep -lr \"$SOURCE_PATH\" \"${TARGET_PATH}\" 2>/dev/null")
+		else
+			FILES_FOR_REPLACEMENT=$(grep -lr "$SOURCE_PATH" "${TARGET_PATH}" 2>/dev/null)
+		fi
+	else
+		FILES_FOR_REPLACEMENT=$($SETSID ssh "${TARGET_USER}"@"${TARGET_HOST}" -p "${TARGET_PORT}" "grep -lr \"$SOURCE_PATH\" \"${TARGET_PATH}\" 2>/dev/null")
+	fi
+
+	if [ -n "$FILES_FOR_REPLACEMENT" ]; then
+		FILES_FOR_REPLACEMENT_CHECK=$(echo "$FILES_FOR_REPLACEMENT" | grep "$TARGET_PATH" 2>/dev/null)
+
+		if [ -n "$FILES_FOR_REPLACEMENT_CHECK" ]; then
+			if [ -z "$TARGET_HOST" ]; then
+				if [[ $(whoami) == 'root' ]]; then
+					FILES_FOR_REPLACEMENT_COUNT=$(su -l "${TARGET_USER}" -s /bin/bash -c "echo \"$FILES_FOR_REPLACEMENT\" | wc -l 2>/dev/null")
+					REPLACING_RESULT=$(su -l "${TARGET_USER}" -s /bin/bash -c "echo \"$FILES_FOR_REPLACEMENT\" | xargs sed -i \"s|${SOURCE_PATH}|${TARGET_PATH}|g\" 2>/dev/null")
+					CHECK_FILES=$(su -l "${TARGET_USER}" -s /bin/bash -c "grep -lr \"$SOURCE_PATH\" \"${TARGET_PATH}\" | wc -l 2>/dev/null")
+				else
+					FILES_FOR_REPLACEMENT_COUNT=$(echo "$FILES_FOR_REPLACEMENT" | wc -l 2>/dev/null)
+					REPLACING_RESULT=$(echo "$FILES_FOR_REPLACEMENT" | xargs sed -i "s|${SOURCE_PATH}|${TARGET_PATH}|g" 2>/dev/null)
+					CHECK_FILES=$(grep -lr \"$SOURCE_PATH\" \"${TARGET_PATH}\" | wc -l 2>/dev/null)
+				fi
+			else
+				FILES_FOR_REPLACEMENT_COUNT=$($SETSID ssh "${TARGET_USER}"@"${TARGET_HOST}" -p "${TARGET_PORT}" "echo \"$FILES_FOR_REPLACEMENT\" | wc -l 2>/dev/null")
+				REPLACING_RESULT=$($SETSID ssh "${TARGET_USER}"@"${TARGET_HOST}" -p "${TARGET_PORT}" "echo \"$FILES_FOR_REPLACEMENT\" | xargs sed -i \"s|${SOURCE_PATH}|${TARGET_PATH}|g\" 2>/dev/null")
+				CHECK_FILES=$($SETSID ssh "${TARGET_USER}"@"${TARGET_HOST}" -p "${TARGET_PORT}" "grep -lr \"$SOURCE_PATH\" \"${TARGET_PATH}\" | wc -l 2>/dev/null")
+			fi
+
+			if [ "$CHECK_FILES" -eq 0 ]; then
+				$SETCOLOR_SUCCESS
+				echo "[OK - modified files: ${FILES_FOR_REPLACEMENT_COUNT}]"
+				$SETCOLOR_NORMAL
+			else
+				$SETCOLOR_FAILURE
+				echo "[FAIL - unable to modify one or more files]"
+				$SETCOLOR_NORMAL
+				ERRORS_MIGRATE=1
+			fi
+		else
+			$SETCOLOR_FAILURE
+			echo "[FAIL - wrong list of files for replacements]"
+			$SETCOLOR_NORMAL
+			ERRORS_MIGRATE=1
+		fi
+	else
+		$SETCOLOR_GREY
+		echo "[SKIPPING - no found files for replacement]"
+		$SETCOLOR_NORMAL
+	fi
+else
+	$SETCOLOR_GREY
+	echo "[SKIPPING]"
+	$SETCOLOR_NORMAL
+fi
+
 echo "Cleanup:"
 
 echo -n "  flushing wp cache..."
