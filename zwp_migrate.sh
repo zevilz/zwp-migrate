@@ -1569,7 +1569,7 @@ if [ "$FAIL_BOTH_REMOTE" -eq 0 ] && [ "$FAIL_USER" -eq 0 ] && [ "$FAIL_REMOTE" -
 		CHECK_TARGET_DB=$($SETSID ssh "${TARGET_USER}"@"${TARGET_HOST}" -p "${TARGET_PORT}" "mysql -h \"$TARGET_DB_HOST\" -P \"$TARGET_DB_PORT\" -u \"$TARGET_DB_USER\" -p\"${TARGET_DB_PASS}\" -e \"USE \"${TARGET_DB_NAME}\";\" 2>&1" 2>&1)
 	fi
 
-	CHECK_TARGET_DB=$(echo "$CHECK_TARGET_DB" | grep -v 'Using a password')
+	CHECK_TARGET_DB=$(echo "$CHECK_TARGET_DB" | grep -v 'Forcing protocol to')
 
 	if [ "$?" -eq 255 ]; then
 		$SETCOLOR_FAILURE
@@ -1825,6 +1825,8 @@ if [ "$ERRORS_MIGRATE" -eq 0 ]; then
 		RESULT_ERRORS=$($SETSID ssh "${SOURCE_USER}"@"${SOURCE_HOST}" -p "${SOURCE_PORT}" "cat \"$SOURCE_SCRIPT_ERRORS_TMP\" | grep -v 'Using a password' 2>&1")
 	fi
 
+	RESULT_ERRORS=$(echo "$RESULT_ERRORS" | grep -v 'Forcing protocol to' 2>&1)
+
 	if [ -z "$RESULT_ERRORS" ]; then
 		$SETCOLOR_SUCCESS
 		echo "[OK]"
@@ -1880,6 +1882,8 @@ if [ "$ERRORS_MIGRATE" -eq 0 ]; then
 		$SETSID ssh "${TARGET_USER}"@"${TARGET_HOST}" -p "${TARGET_PORT}" "gunzip -c \"${TARGET_PATH}\"/\"${SOURCE_DB_NAME}\".sql.gz | mysql -h \"${TARGET_DB_HOST}\" -P \"$TARGET_DB_PORT\" -u \"${TARGET_DB_USER}\" \"${CMD_TARGET_DB_PASS}\" \"${TARGET_DB_NAME}\" 2>\"$TARGET_SCRIPT_ERRORS_TMP\""
 		RESULT_ERRORS=$($SETSID ssh "${TARGET_USER}"@"${TARGET_HOST}" -p "${TARGET_PORT}" "cat \"$TARGET_SCRIPT_ERRORS_TMP\" | grep -v 'Using a password' 2>&1")
 	fi
+
+	RESULT_ERRORS=$(echo "$RESULT_ERRORS" | grep -v 'Forcing protocol to' 2>&1)
 
 	if [ -z "$RESULT_ERRORS" ]; then
 		$SETCOLOR_SUCCESS
