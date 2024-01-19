@@ -74,7 +74,7 @@ IMPORTANT: The script creates temporary file with user password for remote SSH c
 First download the script to any directory:
 
 ```bash
-curl -O https://raw.githubusercontent.com/zevilz/zwp-migrate/master/zwp_migrate.sh
+curl -O https://raw.githubusercontent.com/zevilz/zwp-migrate/main/zwp_migrate.sh
 ```
 
 Then run the script without parameters, answer the questions, check data and confirm:
@@ -86,7 +86,7 @@ bash zwp_migrate.sh
 Also you can use it without downloading:
 
 ```bash
-bash <(curl -sL https://raw.githubusercontent.com/zevilz/zwp-migrate/master/zwp_migrate.sh)
+bash <(curl -sL https://raw.githubusercontent.com/zevilz/zwp-migrate/main/zwp_migrate.sh)
 ```
 
 ### Non-interactive mode
