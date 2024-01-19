@@ -1569,6 +1569,7 @@ if [ "$FAIL_BOTH_REMOTE" -eq 0 ] && [ "$FAIL_USER" -eq 0 ] && [ "$FAIL_REMOTE" -
 		CHECK_TARGET_DB=$($SETSID ssh "${TARGET_USER}"@"${TARGET_HOST}" -p "${TARGET_PORT}" "mysql -h \"$TARGET_DB_HOST\" -P \"$TARGET_DB_PORT\" -u \"$TARGET_DB_USER\" -p\"${TARGET_DB_PASS}\" -e \"USE \"${TARGET_DB_NAME}\";\" 2>&1" 2>&1)
 	fi
 
+	CHECK_TARGET_DB=$(echo "$CHECK_TARGET_DB" | grep -v 'Using a password')
 	CHECK_TARGET_DB=$(echo "$CHECK_TARGET_DB" | grep -v 'Forcing protocol to')
 
 	if [ "$?" -eq 255 ]; then
