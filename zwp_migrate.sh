@@ -1448,6 +1448,7 @@ if [ "$FAIL_BOTH_REMOTE" -eq 0 ] && [ "$FAIL_USER" -eq 0 ] && [ "$FAIL_REMOTE" -
 	fi
 
 	SOURCE_SITE_URL=$(echo "$SOURCE_SITE_URL" | grep -v 'Using a password' | sed 's/\/$//')
+	SOURCE_SITE_URL=$(echo "$SOURCE_SITE_URL" | grep -v 'Forcing protocol to' | sed 's/\/$//')
 
 	if [ "$?" -eq 255 ] && [ -n "$SOURCE_HOST" ]; then
 		$SETCOLOR_FAILURE
