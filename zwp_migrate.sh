@@ -1236,8 +1236,8 @@ if [ "$FAIL_BOTH_REMOTE" -eq 0 ] && [ "$FAIL_USER" -eq 0 ] && [ "$FAIL_REMOTE" -
 			SOURCE_TMP_PATH="${TMPDIR-/tmp}"
 		fi
 	else
-		CHECK_REMOTE_SOURCE_TMP_PATH_EXISTS=$($SETSID ssh "${SOURCE_USER}"@"${SOURCE_HOST}" -p "${SOURCE_PORT}" "if [ -d \"${TMPDIR-/tmp}\" ]; then echo \"${TMPDIR-/tmp}\"; fi")
-		CHECK_REMOTE_SOURCE_TMP_PATH_ACCESS=$($SETSID ssh "${SOURCE_USER}"@"${SOURCE_HOST}" -p "${SOURCE_PORT}" "if [ -w \"${TMPDIR-/tmp}\" ]; then echo 'writable'; fi")
+		CHECK_REMOTE_SOURCE_TMP_PATH_EXISTS=$($SETSID ssh "${SOURCE_USER}"@"${SOURCE_HOST}" -p "${SOURCE_PORT}" "if [ -d \"\${TMPDIR-/tmp}\" ]; then echo \"\${TMPDIR-/tmp}\"; fi")
+		CHECK_REMOTE_SOURCE_TMP_PATH_ACCESS=$($SETSID ssh "${SOURCE_USER}"@"${SOURCE_HOST}" -p "${SOURCE_PORT}" "if [ -w \"\${TMPDIR-/tmp}\" ]; then echo 'writable'; fi")
 
 		if [ -z "$CHECK_REMOTE_SOURCE_TMP_PATH_EXISTS" ]; then
 			$SETCOLOR_FAILURE
@@ -1291,8 +1291,8 @@ if [ "$FAIL_BOTH_REMOTE" -eq 0 ] && [ "$FAIL_USER" -eq 0 ] && [ "$FAIL_REMOTE" -
 			TARGET_TMP_PATH="${TMPDIR-/tmp}"
 		fi
 	else
-		CHECK_REMOTE_TARGET_TMP_PATH_EXISTS=$($SETSID ssh "${TARGET_USER}"@"${TARGET_HOST}" -p "${TARGET_PORT}" "if [ -d \"${TMPDIR-/tmp}\" ]; then echo \"${TMPDIR-/tmp}\"; fi")
-		CHECK_REMOTE_TARGET_TMP_PATH_ACCESS=$($SETSID ssh "${TARGET_USER}"@"${TARGET_HOST}" -p "${TARGET_PORT}" "if [ -w \"${TMPDIR-/tmp}\" ]; then echo 'writable'; fi")
+		CHECK_REMOTE_TARGET_TMP_PATH_EXISTS=$($SETSID ssh "${TARGET_USER}"@"${TARGET_HOST}" -p "${TARGET_PORT}" "if [ -d \"\${TMPDIR-/tmp}\" ]; then echo \"\${TMPDIR-/tmp}\"; fi")
+		CHECK_REMOTE_TARGET_TMP_PATH_ACCESS=$($SETSID ssh "${TARGET_USER}"@"${TARGET_HOST}" -p "${TARGET_PORT}" "if [ -w \"\${TMPDIR-/tmp}\" ]; then echo 'writable'; fi")
 
 		if [ -z "$CHECK_REMOTE_TARGET_TMP_PATH_EXISTS" ]; then
 			$SETCOLOR_FAILURE
@@ -1616,7 +1616,7 @@ if [ "$FAIL_BOTH_REMOTE" -eq 0 ] && [ "$FAIL_USER" -eq 0 ] && [ "$FAIL_REMOTE" -
 		$SETCOLOR_SUCCESS
 		echo "[OK]"
 		$SETCOLOR_NORMAL
-	fi 
+	fi
 else
 	$SETCOLOR_GREY
 	echo "[SKIPPING]"
