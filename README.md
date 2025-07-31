@@ -1,4 +1,4 @@
-# WordPress migration tool [![Version](https://img.shields.io/badge/version-v1.4.0-brightgreen.svg)](https://github.com/zevilz/zwp-migrate/releases/tag/1.4.0)
+# WordPress migration tool [![Version](https://img.shields.io/badge/version-v1.4.1-brightgreen.svg)](https://github.com/zevilz/zwp-migrate/releases/tag/1.4.1)
 
 Simple tool for right migrate WordPress sites between servers and shared hostings with SSH access via rsync and WP-CLI (including local migrations).
 
@@ -194,6 +194,7 @@ NOTE: add a space in front of the command to avoid getting the password in the c
 
 ## Changelog
 
+- 2025.07.31 - 1.4.1 - [Bugfixes](https://github.com/zevilz/zwp-migrate/releases/tag/1.4.1)
 - 2024.01.20 - 1.4.0 - [Added replacing URLs in files, bugfix](https://github.com/zevilz/zwp-migrate/releases/tag/1.4.0)
 - 2023.08.21 - 1.3.0 - Added support for replace paths in files and custom WP-CLI and PHP paths
 - 2023.08.13 - 1.2.1 - Removed trailing slashes in source and target site urls
