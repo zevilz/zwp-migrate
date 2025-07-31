@@ -55,9 +55,10 @@ checkFullPathFormat()
 	fi
 }
 
-checkUrlFormat()
-{
-	if [[ "$1" =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}(:[0-9]+)?$ ]] || [[ $(echo "$1" | grep -P "(?=^.{4,253}$)(^https?://(?:[a-z0-9](?:(?:[a-z0-9\-]){0,61}[a-z0-9])?\.)+[a-z0-9\-]{2,}$)") == "$1" ]]; then
+checkUrlFormat() {
+	if [[ "$1" =~ ^[0-9]{1,3}(\.[0-9]{1,3}){3}(:[0-9]+)?$ ]]; then
+		echo 1
+	elif echo "$1" | grep -P -q '^https?://([a-z0-9\-\.]+|localhost)(:[0-9]+)?(/.*)?$'; then
 		echo 1
 	else
 		echo 0
